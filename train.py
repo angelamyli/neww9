@@ -17,8 +17,8 @@ from utils import (bilinear_upsample_weights, grayscale_to_voc_impl)
 
 import logging
 
-#logging.basicConfig(format='%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s', level=logging.DEBUG)
-logging.basicConfig(level=logging.DEBUG,
+logging.basicConfig(format='%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s', level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG,
                 format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
                 datefmt='%a, %d %b %Y %H:%M:%S',
                 filename='/tmp/w9.log',
@@ -67,7 +67,7 @@ vgg_checkpoint_path = FLAGS.checkpoint_path
 # Creates a variable to hold the global_step.
 global_step = tf.Variable(0, trainable=False, name='global_step', dtype=tf.int64)
 
-
+########################## This is the start line of my main code ############################################
 
 # Define the model that we want to use
 # modify num_classes to number_of_classes at the last layer
@@ -84,8 +84,7 @@ downsampled_logits_shape = tf.shape(logits)
 img_shape = tf.shape(image_tensor)
 
 
-
-# Calculate the output size of the upsampled tensor
+# Define the output shape of the tensor that will be used in the 8x upsampling
 # The shape should be batch_size x width x height x num_classes
 upsampled_logits_shape = tf.stack([
                                   downsampled_logits_shape[0],
@@ -95,8 +94,10 @@ upsampled_logits_shape = tf.stack([
                                   ])
 
 
+########################## This is the start line of the first 2x upsampling ###############################
 
-# aux_logits_pool4 : add a 1 x 1 convolution layer on top of pool4 to produce additional class prediction
+# aux_logits_pool4 : add a 1 x 1 convolution layer on top of pool4
+# to produce additional class prediction
 pool4_feature = end_points['vgg_16/pool4']
 with tf.variable_scope('vgg_16/fc8'):
     aux_logits_pool4 = slim.conv2d(pool4_feature, number_of_classes, [1, 1],
@@ -120,9 +121,13 @@ upsampled_logits = tf.nn.conv2d_transpose(logits, upsample_filter_pool4_tensor_x
 # fuse aux_logits_pool4 with upsampled_logits by summing both predictions.
 upsampled_logits = upsampled_logits + aux_logits_pool4
 
+########################## This is the bottom line of the first 2x upsampling ##############################
 
 
-# aux_logits_pool3 : add a 1 x 1 convolution layer on top of pool3 to produce additional class prediction
+########################## This is the start line of the second 2x upsampling ##############################
+
+# aux_logits_pool3 : add a 1 x 1 convolution layer on top of pool3
+# to produce additional class prediction
 pool3_feature = end_points['vgg_16/pool3']
 with tf.variable_scope('vgg_16/fc8'):
     aux_logits_pool3 = slim.conv2d(pool3_feature, number_of_classes, [1, 1],
@@ -131,7 +136,8 @@ with tf.variable_scope('vgg_16/fc8'):
                                  scope='conv_pool3')
 
 
-# Perform a 2x upsampling on the predictions fused from pool4 and fc8
+# compute the predictions by performing a 2x upsampling
+# on the predictions fused from pool4 and fc8
 upsample_filter_pool3_np_x2 = bilinear_upsample_weights(2,  # upsample_factor,
                                                   number_of_classes)
 
@@ -143,12 +149,16 @@ upsampled_logits = tf.nn.conv2d_transpose(upsampled_logits, upsample_filter_pool
                                           padding='SAME')
 
 
-# fuse predictions from pool3 (aux_logits_pool3) with a 2x upsampling of predictions fused from pool4 and conv7
+# fuse predictions from pool3 (aux_logits_pool3)
+# with a 2x upsampling of predictions fused from pool4 and fc8
 upsampled_logits = upsampled_logits + aux_logits_pool3
 
+########################## This is the bottom line of the second 2x upsampling #############################
 
 
-# Perform a 8x upsampled prediction
+########################## This is the start line of the 8x upsampling #####################################
+
+# Perform a 8x upsampling on the last fused prediction
 upsample_filter_np_x8 = bilinear_upsample_weights(upsample_factor,
                                                    number_of_classes)
 
@@ -158,6 +168,11 @@ upsampled_logits = tf.nn.conv2d_transpose(upsampled_logits, upsample_filter_tens
                                           output_shape=upsampled_logits_shape,
                                           strides=[1, upsample_factor, upsample_factor, 1],
                                           padding='SAME')
+
+########################## This is the bottom line of the 8x upsampling ####################################
+
+
+########################## This is the bottom line of my main code #########################################
 
 
 lbl_onehot = tf.one_hot(annotation_tensor, number_of_classes)

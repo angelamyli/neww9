@@ -60,7 +60,7 @@ def dict_to_tf_example(data, label):
         'image/filename': dataset_util.bytes_feature(
           os.path.basename(data).encode('utf8')),
         'image/encoded': dataset_util.bytes_feature(encoded_data),
-        'image/label': dataset_util.int64_list_feature(encoded_label),
+        'image/label': dataset_util.bytes_feature(encoded_label),
         'image/format': dataset_util.bytes_feature('jpeg'.encode('utf8')),
     }
     #logging.info('feature_dict: %s %d, %d, %s, %s', feature_dict['image/filename'], feature_dict['image/height'], feature_dict['image/width'], feature_dict['image/encoded'], feature_dict['image/label'])
