@@ -18,12 +18,6 @@ from utils import (bilinear_upsample_weights, grayscale_to_voc_impl)
 import logging
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s', level=logging.DEBUG)
-#logging.basicConfig(level=logging.DEBUG,
-                format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
-                datefmt='%a, %d %b %Y %H:%M:%S',
-                filename='/tmp/w9.log',
-                filemode='w')
-
 
 def parse_args(check=True):
     parser = argparse.ArgumentParser()
